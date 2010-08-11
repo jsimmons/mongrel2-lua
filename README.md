@@ -8,7 +8,7 @@ Dependencies
 * [Mongrel2](http://mongrel2.org/index)
 * [Lua](http://www.lua.org/)
 * [ZeroMQ](http://www.zeromq.org/) tested against 2.0.7
-* [ZeroMQ-lua](http://www.zeromq.org/bindings:lua) but for zmq 2.0.7 you'll need my fork, jsimmons/lua-zmq as some constants have changed names.
+* [ZeroMQ-lua](http://www.zeromq.org/bindings:lua) but for zmq 2.0.7 you'll need my fork, http://github.com/jsimmons/lua-zmq as some constants have changed names.
 * [LuaJSON](http://github.com/harningt/luajson)
 
 Installation

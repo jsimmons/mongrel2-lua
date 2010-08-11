@@ -57,20 +57,16 @@ local function new(sender, conn_id, path, headers, body)
 end
 
 local function parse_netstring(ns)
-        local colon = ns:find(':', 1, true)
-        if not colon then error('no colon found in netstring', 2) end
+    local length, rest = unpack(ns:split(':', 2, true))
+    if not length and rest then error('could not split netsplit length and data', 2) end
 
-        local length = tonumber(ns:sub(1, colon - 1))
-        if length == nil then error('invalid netstring length specifier', 2) end
+    length = tonumber(length)
+    if length == nil then error('invalid netstring length specifier', 2) end
 
-		local data_begin = colon + 1
-		local data_end = colon + length + 1
+    if rest:sub(length + 1, length + 1) ~= ',' then error('netstring did not end in ","', 2) end
 
-        if ns:sub(data_end,data_end) ~= ',' then error('netstring did not end in ","', 2) end
-
-        local to_comma = ns:sub(data_begin, data_end - 1)
-        local rest = ns:sub(data_end + 1)
-        return to_comma, rest
+    -- Returns the body of the netstring parsed, followed by any left over data.
+    return rest:sub(1, length), rest:sub(length + 2)
 end
 
 function parse(msg)

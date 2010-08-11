@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-INSTALL_PATH=/usr/local/share/5.1
+INSTALL_PATH=/usr/local/share/lua/5.1
 
 install:
 	mkdir -p $(INSTALL_PATH)/mongrel2

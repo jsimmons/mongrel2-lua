@@ -5,11 +5,11 @@ A [mongrel2](http://mongrel2.org/index) backend handler for Lua, implemented in 
 
 Dependencies
 ------------
-[Mongrel2](http://mongrel2.org/index)
-[Lua](http://www.lua.org/)
-[ZeroMQ](http://www.zeromq.org/) tested against 2.0.7
-[ZeroMQ-lua](http://www.zeromq.org/bindings:lua) but for zmq 2.0.7 you'll need my fork, http://github.com/jsimmons/lua-zmq as some constants have changed names.
-[LuaJSON](http://github.com/harningt/luajson)
+* [Mongrel2](http://mongrel2.org/index)
+* [Lua](http://www.lua.org/)
+* [ZeroMQ](http://www.zeromq.org/) tested against 2.0.7
+* [ZeroMQ-lua](http://www.zeromq.org/bindings:lua) but for zmq 2.0.7 you'll need my fork, jsimmons/lua-zmq as some constants have changed names.
+* [LuaJSON](http://github.com/harningt/luajson)
 
 Installation
 ------------
@@ -96,5 +96,3 @@ Here's a quick list of functions in the connection object with comments ripped d
     connection:deliver_http(uuid, idents, body, code, status, headers)
 
 Finally there is a very basic demo in examples/test.lua and the code itself should be easy enough to follow.
-
-- Josh Simmons

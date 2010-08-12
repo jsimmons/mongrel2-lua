@@ -24,9 +24,9 @@ local json = require 'json'
 local util = require 'mongrel2.util'
 
 local error = error
+local setmetatable = setmetatable
 local string = string
 string.split = util.split
-local setmetatable = setmetatable
 local tonumber = tonumber
 local unpack = unpack
 
@@ -36,31 +36,31 @@ local meta = {}
 meta.__index = meta
 
 --[[
-	Returns true if the request object is a disconnect event.
+    Returns true if the request object is a disconnect event.
 ]]
 function meta:is_disconnect()
-	return self.headers.METHOD == 'JSON' and self.data.type == 'disconnect'
+    return self.headers.METHOD == 'JSON' and self.data.type == 'disconnect'
 end
 
 local function new(sender, conn_id, path, headers, body)
-	local obj = {
-		sender = sender;
-		conn_id = conn_id;
-		path = path;
-		headers = headers;
-		body = body;
-		data = {};
-	}
+    local obj = {
+        sender = sender;
+        conn_id = conn_id;
+        path = path;
+        headers = headers;
+        body = body;
+        data = {};
+    }
 
-	if obj.headers.METHOD == 'JSON' then
-		obj.data = json.decode(body)
-	end
+    if obj.headers.METHOD == 'JSON' then
+        obj.data = json.decode(body)
+    end
 
-	return setmetatable(obj, meta)
+    return setmetatable(obj, meta)
 end
 
 --[[
-	Parses a netstring and returns the body and any left over data.
+    Parses a netstring and returns the body and any left over data.
 ]]
 local function parse_netstring(ns)
     local length, rest = unpack(ns:split(':', 2, true))
@@ -74,7 +74,7 @@ local function parse_netstring(ns)
 end
 
 --[[
-	Parses a request and returns a new request object describing it.
+    Parses a request and returns a new request object describing it.
 ]]
 function parse(msg)
         local sender, conn_id, path, rest = unpack(msg:split(' ', 4))

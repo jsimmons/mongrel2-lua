@@ -33,20 +33,20 @@ local meta = {}
 meta.__index = meta
 
 function meta:new_connection(sender_id, sub_addr, pub_addr)
-	return connection.new(self.ctx, sender_id, sub_addr, pub_addr)
+    return connection.new(self.ctx, sender_id, sub_addr, pub_addr)
 end
 
 function meta:term()
-	self.ctx:term()
+    self.ctx:term()
 end
 
 function new(io_threads)
-	io_threads = io_threads or 1
+    io_threads = io_threads or 1
 
-	local obj = {
-		ctx = zmq.init(io_threads);
-	}
+    local obj = {
+        ctx = zmq.init(io_threads);
+    }
 
-	return setmetatable(obj, meta)
+    return setmetatable(obj, meta)
 end
 

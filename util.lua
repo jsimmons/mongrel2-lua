@@ -26,25 +26,25 @@ local string = string
 module 'mongrel2.util'
 
 function split(str, delim, count, no_patterns)
-        if delim == '' then error('invalid delimiter', 2) end
-        count = count or 0
+    if delim == '' then error('invalid delimiter', 2) end
+    count = count or 0
 
-        local next_delim = 1
-        local i = 1
-        local results = {}
+    local next_delim = 1
+    local i = 1
+    local results = {}
 
-        repeat
-                local start, finish = str:find(delim, next_delim, no_patterns)
-                if start and finish then
-                        results[i] = str:sub(next_delim, start - 1)
-                        next_delim = finish + 1
-                else
-					break
-                end
-                i = i + 1
-        until i == count
+    repeat
+        local start, finish = str:find(delim, next_delim, no_patterns)
+        if start and finish then
+            results[i] = str:sub(next_delim, start - 1)
+            next_delim = finish + 1
+        else
+            break
+        end
+        i = i + 1
+    until i == count
 
-		results[i] = str:sub(next_delim)
+    results[i] = str:sub(next_delim)
 
-        return results
+    return results
 end

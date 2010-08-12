@@ -35,6 +35,9 @@ module 'mongrel2.request'
 local meta = {}
 meta.__index = meta
 
+--[[
+	Returns true if the request object is a disconnect event.
+]]
 function meta:is_disconnect()
 	return self.headers.METHOD == 'JSON' and self.data.type == 'disconnect'
 end
@@ -56,19 +59,23 @@ local function new(sender, conn_id, path, headers, body)
 	return setmetatable(obj, meta)
 end
 
+--[[
+	Parses a netstring and returns the body and any left over data.
+]]
 local function parse_netstring(ns)
     local length, rest = unpack(ns:split(':', 2, true))
     if not length and rest then error('could not split netsplit length and data', 2) end
 
-    length = tonumber(length)
-    if length == nil then error('invalid netstring length specifier', 2) end
+    length = tonumber(length) or error('invalid netstring length', 2)
 
     if rest:sub(length + 1, length + 1) ~= ',' then error('netstring did not end in ","', 2) end
 
-    -- Returns the body of the netstring parsed, followed by any left over data.
     return rest:sub(1, length), rest:sub(length + 2)
 end
 
+--[[
+	Parses a request and returns a new request object describing it.
+]]
 function parse(msg)
         local sender, conn_id, path, rest = unpack(msg:split(' ', 4))
         local headers, rest = parse_netstring(rest)

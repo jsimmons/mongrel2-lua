@@ -8,13 +8,16 @@ Dependencies
 * [Mongrel2](http://mongrel2.org/index)
 * [Lua](http://www.lua.org/)
 * [ZeroMQ](http://www.zeromq.org/) tested against 2.0.7
-* [ZeroMQ-lua](http://www.zeromq.org/bindings:lua) <strike>but for zmq 2.0.7 you'll need [my fork](http://github.com/jsimmons/lua-zmq) as some constants have changed names.</strike>
+* [ZeroMQ-lua](http://www.zeromq.org/bindings:lua)
 * [LuaJSON](http://github.com/harningt/luajson)
 
 Installation
 ------------
-I've included a very simple makefile that should make installation easy.
-    sudo make install
+    make install
+
+Removal
+-------
+    make uninstall
 
 Usage
 -----

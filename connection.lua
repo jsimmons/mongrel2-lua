@@ -30,6 +30,7 @@ local pairs = pairs
 local setmetatable = setmetatable
 local string = string
 local table = table
+local tostring = tostring
 
 module 'mongrel2.connection'
 

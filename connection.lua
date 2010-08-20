@@ -129,7 +129,7 @@ end
     will receive the message once by Mongrel2, but you don't have
     to loop which cuts down on reply volume.
 ]]
-function meta:deliver(uuid, idents, msg)
+function meta:deliver(uuid, idents, data)
     self:send(uuid, table.concat(idents, ' '), data)
 end
 

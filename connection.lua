@@ -96,7 +96,7 @@ end
     Same as reply, but tries to convert data to JSON first.
 ]]
 function meta:reply_json(req, data)
-    self:reply(json.encode(data))
+    self:reply(req, json.encode(data))
 end
 
 local function http_response(body, code, status, headers)

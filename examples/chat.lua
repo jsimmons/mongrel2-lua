@@ -29,7 +29,6 @@ end
 
 while true do
     local request = conn:recv_json()
-print 'got request!'
     local data = request.data
 
     if data['type'] == 'join' then

@@ -155,7 +155,7 @@ end
     Internal use only, call ctx:new_context instead.
 ]]
 function new(ctx, sender_id, sub_addr, pub_addr)
-    local reqs = ctx:socket(zmq.UPSTREAM)
+    local reqs = ctx:socket(zmq.PULL)
     reqs:connect(sub_addr)
 
     local resp = ctx:socket(zmq.PUB)

@@ -7,7 +7,7 @@ Dependencies
 ------------
 * [Mongrel2](http://mongrel2.org/index)
 * [Lua](http://www.lua.org/)
-* [ZeroMQ](http://www.zeromq.org/) tested against 2.0.7
+* [ZeroMQ](http://www.zeromq.org/) requires 2.0.8
 * [ZeroMQ-lua](http://www.zeromq.org/bindings:lua)
 * [LuaJSON](http://github.com/harningt/luajson)
 

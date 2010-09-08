@@ -10,7 +10,8 @@ description = {
 }
 dependencies = {
    "lua >= 5.1",
-   "lua-zmq"
+   "lua-zmq",
+   "luajson"
 }
 
 build = {

@@ -43,7 +43,8 @@ module 'mongrel2.connection'
     for simplicity since that'll be fairly common.
 ]]
 
-local HTTP_FORMAT = 'HTTP/1.1 %s\r\n%s\r\n%s\r\n\r\n%s'
+-- (code) (status)\r\n(headers)\r\n\r\n(body)
+local HTTP_FORMAT = 'HTTP/1.1 %s %s\r\n%s\r\n\r\n%s'
 
 local meta = {}
 meta.__index = meta

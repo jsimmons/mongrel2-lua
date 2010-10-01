@@ -152,6 +152,20 @@ function meta:deliver_http(uuid, idents, body, code, status, headers)
 end
 
 --[[
+-- Tells Mongrel2 to explicitly close the HTTP connection.
+--]]
+function meta:close(req)
+    self:reply(req, "")
+end
+
+--[[
+-- Sends and explicit close to multiple idents with a single message.
+--]]
+function meta:deliver_close(uuid, idents)
+    self:deliver(uuid, idents, "")
+end
+
+--[[
     Creates a new connection object.
     Internal use only, call ctx:new_context instead.
 ]]

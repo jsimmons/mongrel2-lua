@@ -42,6 +42,19 @@ function meta:is_disconnect()
     return self.headers.METHOD == 'JSON' and self.data.type == 'disconnect'
 end
 
+--[[
+-- Checks if the request was for a connection close.
+--]]
+function meta:should_close()
+    if self.headers.Connection == 'close' then
+        return true
+    elseif self.headers.VERSION == 'HTTP/1.0' then
+        return true
+    else
+        return false
+    end
+end
+
 local function new(sender, conn_id, path, headers, body)
     local obj = {
         sender = sender;

@@ -26,11 +26,8 @@ local zmq = require 'zmq'
 local request = require 'mongrel2.request'
 local util = require 'mongrel2.util'
 
-local pairs = pairs
-local setmetatable = setmetatable
-local string = string
-local table = table
-local tostring = tostring
+local pairs, setmetatable, tostring = pairs, setmetatable, tostring
+local string, table = string, table
 
 module 'mongrel2.connection'
 
@@ -45,6 +42,17 @@ module 'mongrel2.connection'
 
 -- (code) (status)\r\n(headers)\r\n\r\n(body)
 local HTTP_FORMAT = 'HTTP/1.1 %s %s\r\n%s\r\n\r\n%s'
+
+local function http_response(body, code, status, headers)
+    headers['content-length'] = body:len()
+    
+    local raw = {}
+    for k, v in pairs(headers) do
+        table.insert(raw, ('%s: %s'):format(k, v))
+    end
+    
+    return HTTP_FORMAT:format(code, status, table.concat(raw, '\r\n'), body)
+end
 
 local meta = {}
 meta.__index = meta
@@ -98,17 +106,6 @@ end
 ]]
 function meta:reply_json(req, data)
     self:reply(req, json.encode(data))
-end
-
-local function http_response(body, code, status, headers)
-    headers['Content-Length'] = body:len()
-    
-    local raw = {}
-    for k, v in pairs(headers) do
-        table.insert(raw, ('%s: %s'):format(k, v))
-    end
-    
-    return HTTP_FORMAT:format(code, status, table.concat(raw, '\r\n'), body)
 end
 
 --[[

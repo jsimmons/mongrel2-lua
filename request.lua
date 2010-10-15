@@ -23,12 +23,11 @@
 local json = require 'json'
 local util = require 'mongrel2.util'
 
-local error = error
-local setmetatable = setmetatable
+local error, setmetatable, tonumber, unpack = error, setmetatable, tonumber, unpack
+
+-- Use our own split mechanism, but put it into string so we can call it on strings directly.
 local string = string
 string.split = util.split
-local tonumber = tonumber
-local unpack = unpack
 
 module 'mongrel2.request'
 
@@ -39,16 +38,16 @@ meta.__index = meta
     Returns true if the request object is a disconnect event.
 ]]
 function meta:is_disconnect()
-    return self.headers.METHOD == 'JSON' and self.data.type == 'disconnect'
+    return self.headers['METHOD'] == 'JSON' and self.data.type == 'disconnect'
 end
 
 --[[
 -- Checks if the request was for a connection close.
 --]]
 function meta:should_close()
-    if self.headers.Connection == 'close' then
+    if self.headers['connection'] == 'close' then
         return true
-    elseif self.headers.VERSION == 'HTTP/1.0' then
+    elseif self.headers['VERSION'] == 'HTTP/1.0' then
         return true
     else
         return false
@@ -65,7 +64,7 @@ local function new(sender, conn_id, path, headers, body)
         data = {};
     }
 
-    if obj.headers.METHOD == 'JSON' then
+    if obj.headers['METHOD'] == 'JSON' then
         obj.data = json.decode(body)
     end
 
@@ -97,5 +96,4 @@ function parse(msg)
 
         return new(sender, conn_id, path, headers, body)
 end
-
 

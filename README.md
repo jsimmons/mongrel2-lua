@@ -3,6 +3,8 @@ mongrel2-lua
 
 A [mongrel2](http://mongrel2.org/index) backend handler for Lua, implemented in Lua, and based on the mongrel2 python backend api.
 
+Versions are tagged and match the mongrel2 version they should work with. ie v1.3[.x] should work with mongrel2 version 1.3. HEAD is kept in rough sync with the latest changes in the mongrel2 trunk.
+
 Dependencies
 ------------
 * [Mongrel2](http://mongrel2.org/index)

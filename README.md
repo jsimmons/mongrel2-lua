@@ -10,7 +10,7 @@ Dependencies
 * [Mongrel2](http://mongrel2.org/index)
 * [Lua](http://www.lua.org/)
 * [ZeroMQ](http://www.zeromq.org/) requires at least 2.0.8
-* [ZeroMQ-lua](http://www.zeromq.org/bindings:lua)
+* [ZeroMQ-lua](http://github.com/jsimmons/lua-zmq) REQUIRES MY VERSION.
 * [LuaJSON](http://github.com/harningt/luajson)
 
 Installation

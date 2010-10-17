@@ -62,13 +62,18 @@ meta.__index = meta
     Upon error while parsing the data, returns nil and an error message.
 ]]
 function meta:recv()
-    return request.parse(self.reqs:recv())
+    local req, err = self.reqs:recv()
+    if req then
+        return request.parse(req)
+    else
+        return nil, err
+    end
 end
 
 --[[
     Same as regular recv, but assumes the body is JSON and 
     creates a new attribute named req.data with the decoded
-    payload.  This will throw an error if it is not JSON.
+    payload.
 
     Normally Request just does this if the METHOD is 'JSON'
     but you can use this to force it for say HTTP requests.
@@ -96,12 +101,7 @@ end
 function meta:send(uuid, conn_id, msg)
     conn_id = tostring(conn_id)
     local header = ('%s %d:%s,'):format(uuid, conn_id:len(), conn_id)
-    local success, err = pcall(self.resp.send, self.resp, header .. ' ' .. msg)
-    if not success then 
-        return nil, err
-    else
-        return true
-    end
+    return self.resp:send(header .. ' ' .. msg)
 end
 
 --[[
@@ -179,23 +179,26 @@ end
     Internal use only, call ctx:new_context instead.
 ]]
 function new(ctx, sender_id, sub_addr, pub_addr)
-    local success, reqs = pcall(function() 
-                              local sock = ctx:socket(zmq.PULL)
-                              sock:connect(sub_addr)
-                              return sock
-                          end)
+    local good, err
 
-    if not success then return nil, reqs end
+    -- Create and connect to the PULL (request) socket.
+    local reqs, err = ctx:socket(zmq.PULL);
+    if not reqs then return nil, err end
 
-    local success, resp = pcall(function()
-                                local sock = ctx:socket(zmq.PUB)
-                                sock:connect(pub_addr)
-                                sock:setopt(zmq.IDENTITY, sender_id)
-                                return sock
-                            end)
+    good, err = reqs:connect(sub_addr)
+    if not good then return nil, err end
 
-    if not success then return nil, resp end
+    -- Create and connect to the PUB (response) socket.
+    local resp, err = ctx:socket(zmq.PUB)
+    if not resp then return nil, err end
 
+    good, err = resp:connect(pub_addr)
+    if not good then return nil, err end
+
+    good, err = resp:setopt(zmq.IDENTITY, sender_id)
+    if not good then return nil, err end
+
+    -- Build the object and give it a metatable.
     local obj = {
         ctx = ctx;
         sender_id = sender_id;

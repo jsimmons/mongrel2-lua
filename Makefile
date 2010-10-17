@@ -21,8 +21,8 @@
 INSTALL_PATH=/usr/local/share/lua/5.1
 
 install:
-	sudo mkdir -p $(INSTALL_PATH)/mongrel2
-	sudo install -t $(INSTALL_PATH)/mongrel2 connection.lua init.lua request.lua util.lua
+	mkdir -p $(INSTALL_PATH)/mongrel2
+	install -m 644 -t $(INSTALL_PATH)/mongrel2 connection.lua init.lua request.lua util.lua
 
 uninstall: 
-	sudo rm -rf $(INSTALL_PATH)/mongrel2	
+	rm -rf $(INSTALL_PATH)/mongrel2

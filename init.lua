@@ -37,16 +37,15 @@ function meta:new_connection(sender_id, sub_addr, pub_addr)
 end
 
 function meta:term()
-    local success, err = pcall(self.ctx.term, self.ctx)
-    if not success then return nil, err end
+    return self.ctx:term()
 end
 
 function new(io_threads)
     io_threads = io_threads or 1
 
-    local success, ctx = pcall(zmq.init, io_threads)
+    local ctx, err = zmq.init(io_threads)
 
-    if not success then return nil, ctx end
+    if not ctx then return nil, err end
 
     local obj = {
         ctx = ctx;

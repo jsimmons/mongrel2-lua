@@ -6,34 +6,34 @@ local pub_addr = 'tcp://127.0.0.1:8988'
 local io_threads = 1
 
 local response_string = [[
-    <pre>
-    SENDER: %s
-    IDENT: %s
-    PATH: %s
-    HEADERS: %s
-    BODY: %s
-    </pre>
+<pre>
+SENDER: %s
+IDENT: %s
+PATH: %s
+HEADERS: %s
+BODY: %s
+</pre>
 ]]
 
 -- Create new mongrel2 context
 -- This is basically just a wrapper around the zeromq context so we can
 -- properly terminate it, and set a number of threads to use.
-local ctx = mongrel2.new(io_threads)
+local ctx = assert(mongrel2.new(io_threads))
 
 -- Creates a new connection object using the mongrel2 context
-local conn = ctx:new_connection(sender_id, sub_addr, pub_addr)
+local conn = assert(ctx:new_connection(sender_id, sub_addr, pub_addr))
 
 local function dump(tab)
     local out = ''
     for k, v in pairs(tab) do
-        out = ('%s\n[%s]: %s)'):format(out, k, v)
+        out = ('%s\n-- [%s]: %s)'):format(out, k, v)
     end
     return out
 end
 
 while true do
     print 'Waiting for request...'
-    local req = conn:recv()
+    local req = assert(conn:recv())
 
     if req:is_disconnect() then
         print 'Disconnected'

@@ -20,10 +20,11 @@
 # THE SOFTWARE.
 ]]
 
+
 local json = require 'json'
 local util = require 'mongrel2.util'
 
-local error, setmetatable, tonumber, unpack = error, setmetatable, tonumber, unpack
+local pcall, setmetatable, tonumber, unpack = pcall, setmetatable, tonumber, unpack
 
 -- Use our own split mechanism, but put it into string so we can call it on strings directly.
 local string = string
@@ -76,11 +77,12 @@ end
 ]]
 local function parse_netstring(ns)
     local length, rest = unpack(ns:split(':', 2, true))
-    if not length and rest then error('could not split netsplit length and data', 2) end
+    if not length and rest then return nil, 'could not split netsplit length and data' end
 
-    length = tonumber(length) or error('invalid netstring length', 2)
+    length = tonumber(length)
+    if not length then return nil, 'invalid netstring length' end
 
-    if rest:sub(length + 1, length + 1) ~= ',' then error('netstring did not end in ","', 2) end
+    if rest:sub(length + 1, length + 1) ~= ',' then return nil, 'netstring did not end in ","' end
 
     return rest:sub(1, length), rest:sub(length + 2)
 end
@@ -90,9 +92,15 @@ end
 ]]
 function parse(msg)
         local sender, conn_id, path, rest = unpack(msg:split(' ', 4))
+        
         local headers, rest = parse_netstring(rest)
+        if not headers then return nil, rest end
+
         body = parse_netstring(rest)
-        headers = json.decode(headers)
+
+        -- Have to pcall because json.decode errors on invalid json data.
+        local success, headers = pcall(json.decode, headers)
+        if not success then return nil, headers end
 
         return new(sender, conn_id, path, headers, body)
 end

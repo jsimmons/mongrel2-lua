@@ -26,7 +26,7 @@ local zmq = require 'zmq'
 local request = require 'mongrel2.request'
 local util = require 'mongrel2.util'
 
-local pairs, setmetatable, tostring = pairs, setmetatable, tostring
+local pairs, pcall, setmetatable, tostring = pairs, pcall, setmetatable, tostring
 local string, table = string, table
 
 module 'mongrel2.connection'
@@ -59,6 +59,7 @@ meta.__index = meta
 
 --[[
     Receives a raw mongrel2.request object that you can then work with.
+    Upon error while parsing the data, returns nil and an error message.
 ]]
 function meta:recv()
     return request.parse(self.reqs:recv())
@@ -71,12 +72,18 @@ end
 
     Normally Request just does this if the METHOD is 'JSON'
     but you can use this to force it for say HTTP requests.
+
+    Upon error while parsing the data, returns nil and an error message.
 ]]
 function meta:recv_json()
-    local recv = self:recv()
+    local recv, err = self:recv()
+    if not recv then return nil, err end
     
     if not recv.data then
-        recv.data = json.decode(recv.body)
+        local success, data = pcall(json.decode, recv.body)
+        if not success then return nil, data end
+
+        recv.data = data
     end
 
     return recv
@@ -89,7 +96,12 @@ end
 function meta:send(uuid, conn_id, msg)
     conn_id = tostring(conn_id)
     local header = ('%s %d:%s,'):format(uuid, conn_id:len(), conn_id)
-    self.resp:send(header .. ' ' .. msg)
+    local success, err = pcall(self.resp.send, self.resp, header .. ' ' .. msg)
+    if not success then 
+        return nil, err
+    else
+        return true
+    end
 end
 
 --[[
@@ -98,14 +110,14 @@ end
     needed to do the proper reply addressing.
 ]]
 function meta:reply(req, msg)
-    self:send(req.sender, req.conn_id, msg) 
+    return self:send(req.sender, req.conn_id, msg) 
 end
 
 --[[
     Same as reply, but tries to convert data to JSON first.
 ]]
 function meta:reply_json(req, data)
-    self:reply(req, json.encode(data))
+    return self:reply(req, json.encode(data))
 end
 
 --[[
@@ -117,7 +129,7 @@ function meta:reply_http(req, body, code, status, headers)
     code = code or 200
     status = status or 'OK'
     headers = headers or {}
-    self:reply(req, http_response(body, code, status, headers))
+    return self:reply(req, http_response(body, code, status, headers))
 end
 
 --[[
@@ -128,14 +140,14 @@ end
     to loop which cuts down on reply volume.
 ]]
 function meta:deliver(uuid, idents, data)
-    self:send(uuid, table.concat(idents, ' '), data)
+    return self:send(uuid, table.concat(idents, ' '), data)
 end
 
 --[[
     Same as deliver, but converts to JSON first.
 ]]
 function meta:deliver_json(uuid, idents, data)
-    self:deliver(uuid, idents, json.encode(data))
+    return self:deliver(uuid, idents, json.encode(data))
 end
 
 --[[
@@ -145,21 +157,21 @@ function meta:deliver_http(uuid, idents, body, code, status, headers)
     code = code or 200
     status = status or 'OK'
     headers = headers or {}
-    self:deliver(uuid, idents, http_response(body, code, status, headers))
+    return self:deliver(uuid, idents, http_response(body, code, status, headers))
 end
 
 --[[
 -- Tells Mongrel2 to explicitly close the HTTP connection.
 --]]
 function meta:close(req)
-    self:reply(req, "")
+    return self:reply(req, "")
 end
 
 --[[
 -- Sends and explicit close to multiple idents with a single message.
 --]]
 function meta:deliver_close(uuid, idents)
-    self:deliver(uuid, idents, "")
+    return self:deliver(uuid, idents, "")
 end
 
 --[[
@@ -167,12 +179,22 @@ end
     Internal use only, call ctx:new_context instead.
 ]]
 function new(ctx, sender_id, sub_addr, pub_addr)
-    local reqs = ctx:socket(zmq.PULL)
-    reqs:connect(sub_addr)
+    local success, reqs = pcall(function() 
+                              local sock = ctx:socket(zmq.PULL)
+                              sock:connect(sub_addr)
+                              return sock
+                          end)
 
-    local resp = ctx:socket(zmq.PUB)
-    resp:connect(pub_addr)
-    resp:setopt(zmq.IDENTITY, sender_id)
+    if not success then return nil, reqs end
+
+    local success, resp = pcall(function()
+                                local sock = ctx:socket(zmq.PUB)
+                                sock:connect(pub_addr)
+                                sock:setopt(zmq.IDENTITY, sender_id)
+                                return sock
+                            end)
+
+    if not success then return nil, resp end
 
     local obj = {
         ctx = ctx;

@@ -40,9 +40,9 @@ while true do
     else
         local response = response_string:format(req.sender, req.conn_id, req.path, dump(req.headers), req.body)
         print(response)
-        conn:reply_http(req, response)
+        assert(conn:reply_http(req, response))
     end
 end
 
-ctx:term()
+assert(ctx:term())
 

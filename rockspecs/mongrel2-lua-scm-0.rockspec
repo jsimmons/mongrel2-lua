@@ -11,7 +11,8 @@ description = {
 dependencies = {
    "lua >= 5.1",
    "lua-zmq",
-   "luajson"
+   "luajson",
+   "lsqlite3"
 }
 
 build = {
@@ -21,7 +22,8 @@ build = {
       ["mongrel2.lua"]        = "init.lua",
       ["mongrel2.connection"] = "connection.lua",
       ["mongrel2.request"]    = "request.lua",
-      ["mongrel2.util"]       = "util.lua"
+      ["mongrel2.util"]       = "util.lua",
+      ["mongrel2.config"]     = "config.lua"
     }
   }
 }

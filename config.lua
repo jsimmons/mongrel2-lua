@@ -68,17 +68,13 @@ local function db_select(db, name, data)
     local query = 'SELECT * FROM ' .. name
 
     if data then
-        local where = ''
-        local k, v = next(data, nil)
-        if k then
-            where = where .. k .. '=' .. sql_tostring(v)
-
-            for k, v in next, data, k do
-                where = where .. ' AND ' .. k .. '=' .. sql_tostring(v)
-            end
+        local datas = {}
+        for k, v in pairs(data) do
+            local joined = ('%s = %s'):format(k, sql_tostring(v))
+            table.insert(datas, joined)
         end
 
-        query = query .. ' WHERE ' .. where
+        query = query .. ' WHERE ' .. table.concat(datas, ' = ')
     end
 
     local results = {}

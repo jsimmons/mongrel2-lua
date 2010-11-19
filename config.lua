@@ -39,7 +39,7 @@ local function sql_tostring(obj)
         elseif t == 'number' then
             return tostring(obj)
         elseif t == 'string' then
-            return ('"%s"'):format(obj)
+            return ('%q'):format(obj)
         elseif t == 'nil' then
             return 'NULL'
         else
@@ -65,7 +65,7 @@ local function db_insert(db, name, data)
 end
 
 local function db_select(db, name, data)
-    local query = 'SELECT * FROM ' .. name
+    local query
 
     if data then
         local datas = {}
@@ -74,7 +74,9 @@ local function db_select(db, name, data)
             table.insert(datas, joined)
         end
 
-        query = query .. ' WHERE ' .. table.concat(datas, ' = ')
+        query = ('SELECT * FROM %s WHERE %s'):format(name, table.concat(datas, ' AND '))
+    else
+        query = ('SELECT * FROM %s'):format(name)
     end
 
     local results = {}

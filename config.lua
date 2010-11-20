@@ -64,17 +64,17 @@ local function db_insert(db, name, data)
     return db:last_insert_rowid()
 end
 
-local function db_select(db, name, data)
+local function db_select(db, name, predicate)
     local query
 
     if data then
-        local datas = {}
-        for k, v in pairs(data) do
-            local joined = ('%s = %s'):format(k, sql_tostring(v))
-            table.insert(datas, joined)
+        local conditions = {}
+        for k, v in pairs(predicate) do
+            local condition = ('%s = %s'):format(k, sql_tostring(v))
+            table.insert(conditions, condition)
         end
 
-        query = ('SELECT * FROM %s WHERE %s'):format(name, table.concat(datas, ' AND '))
+        query = ('SELECT * FROM %s WHERE %s'):format(name, table.concat(conditions, ' AND '))
     else
         query = ('SELECT * FROM %s'):format(name)
     end

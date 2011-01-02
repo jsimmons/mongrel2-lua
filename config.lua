@@ -67,7 +67,7 @@ end
 local function db_select(db, name, predicate)
     local query
 
-    if data then
+    if predicate then
         local conditions = {}
         for k, v in pairs(predicate) do
             local condition = ('%s = %s'):format(k, sql_tostring(v))

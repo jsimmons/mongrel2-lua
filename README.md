@@ -21,7 +21,11 @@ m2-lua ships with a very basic Makefile that should install the required files s
 
 Usage
 -----
-I won't try to describe how mongrel2 or the handlers work, for that there's [the manual](http://mongrel2.org/doc/tip/docs/manual/book.wiki), however this should describe the basic api.
+
+One may be more interested in using one of the web frameworks that are listed [here](https://github.com/jsimmons/mongrel2-lua/wiki/Some-frameworks-using-mongrel2-lua)
+as this library is a low level interface.
+
+Otherwise I won't try to describe how mongrel2 or the handlers work, for that there's [the manual](http://mongrel2.org/doc/tip/docs/manual/book.wiki), however this should describe the basic api.
 Generated API documentation is on the TODO list.
 
 If in doubt, it's probably exactly the same as the python API.

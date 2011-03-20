@@ -27,7 +27,7 @@ local request = require 'mongrel2.request'
 local util = require 'mongrel2.util'
 
 local pairs, pcall, setmetatable, tostring = pairs, pcall, setmetatable, tostring
-local string, table = string, table
+local insert, concat, format, length = table.insert, table.concat, string.format, string.len 
 
 module 'mongrel2.connection'
 
@@ -44,14 +44,14 @@ module 'mongrel2.connection'
 local HTTP_FORMAT = 'HTTP/1.1 %s %s\r\n%s\r\n\r\n%s'
 
 local function http_response(body, code, status, headers)
-    headers['content-length'] = body:len()
+    headers['content-length'] = length(body)
     
     local raw = {}
     for k, v in pairs(headers) do
-        table.insert(raw, ('%s: %s'):format(k, v))
+        insert(raw, format('%s: %s', k, v))
     end
     
-    return HTTP_FORMAT:format(code, status, table.concat(raw, '\r\n'), body)
+    return format(HTTP_FORMAT, code, status, concat(raw, '\r\n'), body)
 end
 
 local meta = {}
@@ -100,7 +100,7 @@ end
 ]]
 function meta:send(uuid, conn_id, msg)
     conn_id = tostring(conn_id)
-    local header = ('%s %d:%s,'):format(uuid, conn_id:len(), conn_id)
+    local header = format('%s %d:%s,', uuid, conn_id:len(), conn_id)
     return self.resp:send(header .. ' ' .. msg)
 end
 
@@ -140,7 +140,7 @@ end
     to loop which cuts down on reply volume.
 ]]
 function meta:deliver(uuid, idents, data)
-    return self:send(uuid, table.concat(idents, ' '), data)
+    return self:send(uuid, concat(idents, ' '), data)
 end
 
 --[[

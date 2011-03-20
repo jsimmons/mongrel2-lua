@@ -23,25 +23,25 @@ local ctx = assert(mongrel2.new(io_threads))
 -- Creates a new connection object using the mongrel2 context
 local conn = assert(ctx:new_connection(sender_id, sub_addr, pub_addr))
 
+local assert = assert
+local format = string.format
+local recv = conn.recv
+local reply_http = conn.reply_http
+
 local function dump(tab)
     local out = ''
     for k, v in pairs(tab) do
-        out = ('%s\n-- [%s]: %s)'):format(out, k, v)
+        out = format('%s\n-- [%s]: %s)', out, k, v)
     end
     return out
 end
 
 while true do
-    print 'Waiting for request...'
-    local req = assert(conn:recv())
+    local req = assert(recv(conn))
 
-    if req:is_disconnect() then
-        print 'Disconnected'
-    else
-        local response = response_string:format(req.sender, req.conn_id, req.path, dump(req.headers), req.body)
-        print(response)
-        assert(conn:reply_http(req, response))
-    end
+    local response = format(response_string, req.sender, req.conn_id, req.path, dump(req.headers), req.body)
+
+    assert(reply_http(conn, req, response))
 end
 
 assert(ctx:term())

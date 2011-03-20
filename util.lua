@@ -21,7 +21,7 @@
 ]]
 
 local error = error
-local string = string
+local find, sub = string.find, string.sub
 
 module 'mongrel2.util'
 
@@ -34,9 +34,9 @@ function split(str, delim, count, no_patterns)
     local results = {}
 
     repeat
-        local start, finish = str:find(delim, next_delim, no_patterns)
+        local start, finish = find(str, delim, next_delim, no_patterns)
         if start and finish then
-            results[i] = str:sub(next_delim, start - 1)
+            results[i] = sub(str, next_delim, start - 1)
             next_delim = finish + 1
         else
             break
@@ -44,7 +44,7 @@ function split(str, delim, count, no_patterns)
         i = i + 1
     until i == count
 
-    results[i] = str:sub(next_delim)
+    results[i] = sub(str, next_delim)
 
     return results
 end

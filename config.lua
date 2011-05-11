@@ -29,8 +29,6 @@ local sqlite = require 'lsqlite3'
 
 local error, io, next, pairs, table, tostring, type = error, io, next, pairs, table, tostring, type
 
-local print = print
-
 module 'mongrel2.config'
 
 local prep = [[
@@ -263,7 +261,6 @@ function write(db_file, conf)
 end
 
 -- Read a config from sqlite.
--- TODO: Return a format suitable for passing to write.
 function read(db_file)
     local db = sqlite.open(db_file)
 

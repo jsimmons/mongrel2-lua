@@ -24,7 +24,6 @@ build = {
       ["mongrel2.request"]    = "request.lua",
       ["mongrel2.util"]       = "util.lua",
       ["mongrel2.config"]     = "config.lua",
-      ["mongrel2.tnetstring"] = "tnetstring.lua"
     };
   };
 }

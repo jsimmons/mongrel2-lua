@@ -27,9 +27,91 @@
 
 local sqlite = require 'lsqlite3'
 
-local error, next, pairs, table, type = error, next, pairs, table, type
+local error, io, next, pairs, table, tostring, type = error, io, next, pairs, table, tostring, type
+
+local print = print
 
 module 'mongrel2.config'
+
+local prep = [[
+begin transaction;
+
+DROP TABLE IF EXISTS server;
+DROP TABLE IF EXISTS host;
+DROP TABLE IF EXISTS handler;
+DROP TABLE IF EXISTS proxy;
+DROP TABLE IF EXISTS route;
+DROP TABLE IF EXISTS statistic;
+DROP TABLE IF EXISTS mimetype;
+DROP TABLE IF EXISTS setting;
+DROP TABLE IF EXISTS directory;
+
+CREATE TABLE server (id INTEGER PRIMARY KEY,
+    uuid TEXT,
+    access_log TEXT,
+    error_log TEXT,
+    chroot TEXT DEFAULT '/var/www',
+    pid_file TEXT,
+    default_host INTEGER,
+    name TEXT DEFAULT "",
+    bind_addr TEXT DEFAULT "0.0.0.0",
+    port INTEGER);
+
+CREATE TABLE host (id INTEGER PRIMARY KEY, 
+    server_id INTEGER,
+    maintenance BOOLEAN DEFAULT 0,
+    name TEXT,
+    matching TEXT);
+
+CREATE TABLE handler (id INTEGER PRIMARY KEY,
+    send_spec TEXT, 
+    send_ident TEXT,
+    recv_spec TEXT,
+    recv_ident TEXT,
+    raw_payload INTEGER DEFAULT 0,
+    protocol TEXT DEFAULT 'json');
+
+CREATE TABLE proxy (id INTEGER PRIMARY KEY,
+    addr TEXT,
+    port INTEGER);
+
+CREATE TABLE directory (id INTEGER PRIMARY KEY,
+    base TEXT, index_file TEXT, default_ctype TEXT);
+
+CREATE TABLE route (id INTEGER PRIMARY KEY,
+    path TEXT,
+    reversed BOOLEAN DEFAULT 0,
+    host_id INTEGER,
+    target_id INTEGER,
+    target_type TEXT);
+
+CREATE TABLE setting (id INTEGER PRIMARY KEY, key TEXT, value TEXT);
+
+CREATE TABLE statistic (id SERIAL, 
+    other_type TEXT,
+    other_id INTEGER,
+    name text,
+    sum REAL,
+    sumsq REAL,
+    n INTEGER,
+    min REAL,
+    max REAL,
+    mean REAL,
+    sd REAL,
+    primary key (other_type, other_id, name));
+
+CREATE TABLE mimetype (id INTEGER PRIMARY KEY, mimetype TEXT, extension TEXT);
+
+CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY,
+    who TEXT,
+    what TEXT,
+    location TEXT,
+    happened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    how TEXT,
+    why TEXT);
+    
+commit;
+]]
 
 local function sql_tostring(obj)
         local t = type(obj)
@@ -52,15 +134,27 @@ local function db_insert(db, name, data)
     local keys = {}
     local i = 1
     for k, v in pairs(data) do
-        keys[i] = k
-        values[i] = sql_tostring(v)
-        i = i + 1
+        if k and v then
+            keys[i] = k
+            values[i] = sql_tostring(v)
+            i = i + 1
+        end
+    end
+
+    -- Nothing to write.
+    if i == 1 then
+        return 0
     end
 
     local fmt = 'INSERT INTO %s(%s) VALUES(%s)'
     local query = fmt:format(name, table.concat(keys, ','), table.concat(values, ','))
 
-    db:exec(query)
+    local result = db:exec(query)
+
+    if result ~= sqlite.OK then
+        error('error writing sql: ' .. db:errmsg())
+    end
+
     return db:last_insert_rowid()
 end
 
@@ -115,8 +209,8 @@ end
 local WRITERS = {
     proxy = create_simple_writer('proxy', 'addr', 'port');
     dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype');
-    handler = create_simple_writer('handler', 'send_spec', 'send_ident', 'recv_spec', 'recv_ident');
-    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_file', 'default_host', 'name', 'port');
+    handler = create_simple_writer('handler', 'send_spec', 'send_ident', 'recv_spec', 'recv_ident', 'raw_payload', 'protocol');
+    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_File', 'default_host', 'name', 'bind_addr', 'port');
 }
 
 function WRITERS.route(db, obj, state)
@@ -135,8 +229,8 @@ function WRITERS.host(db, obj, state)
         return state[host]
 end
 
-function WRITERS.setting(db, obj, state)
-        return db_insert(db, 'setting', {key = obj.key; value = obj.value})
+function WRITERS.setting(db, obj)
+    return db_insert(db, 'setting', {key = obj.key; value = obj.value})
 end
 
 -- Writes a config to sqlite.
@@ -146,15 +240,7 @@ function write(db_file, conf)
     -- Create a new write cache, otherwise we'd not know what to write, and stuff.
     write_cache = {}
 
-    db:exec [[
-        DELETE FROM server;
-        DELETE FROM route;
-        DELETE FROM host;
-        DELETE FROM setting;
-        DELETE FROM proxy;
-        DELETE FROM directory;
-        DELETE FROM handler;
-    ]]
+    db:exec(prep)
 
     for _, server in pairs(conf.servers) do
         local server_id = WRITERS.server(db, server, write_cache)
@@ -166,14 +252,18 @@ function write(db_file, conf)
         end
     end
 
-    for _, setting in pairs(conf.settings) do
-        WRITERS.setting(db, setting)
+    -- Make sure we have settings before we try writing them.
+    if conf.settings then
+        for _, setting in pairs(conf.settings) do
+            WRITERS.setting(db, setting)
+        end
     end
 
     db:close()
 end
 
 -- Read a config from sqlite.
+-- TODO: Return a format suitable for passing to write.
 function read(db_file)
     local db = sqlite.open(db_file)
 
@@ -204,7 +294,12 @@ function read(db_file)
         table.insert(servers, server)
     end
 
+    local settings = {}
+    for _, setting in pairs(db_select(db, 'setting')) do
+        settings[setting.key] = setting.value
+    end
+
     db:close()
 
-    return servers
+    return {servers = servers; settings = settings}
 end

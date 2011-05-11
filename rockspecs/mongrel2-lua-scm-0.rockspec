@@ -23,7 +23,7 @@ build = {
       ["mongrel2.connection"] = "connection.lua",
       ["mongrel2.request"]    = "request.lua",
       ["mongrel2.util"]       = "util.lua",
-      ["mongrel2.config"]     = "config.lua"
-    }
-  }
+      ["mongrel2.config"]     = "config.lua",
+    };
+  };
 }

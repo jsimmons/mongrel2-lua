@@ -29,7 +29,8 @@ local util = require 'mongrel2.util'
 local pairs, pcall, setmetatable, tostring = pairs, pcall, setmetatable, tostring
 local insert, concat, format, length = table.insert, table.concat, string.format, string.len 
 
-module 'mongrel2.connection'
+local MOD, META = {}, {}
+META.__index = META
 
 --[[
     A Connection object manages the connection between your handler
@@ -54,14 +55,11 @@ local function http_response(body, code, status, headers)
     return format(HTTP_FORMAT, code, status, concat(raw, '\r\n'), body)
 end
 
-local meta = {}
-meta.__index = meta
-
 --[[
     Receives a raw mongrel2.request object that you can then work with.
     Upon error while parsing the data, returns nil and an error message.
 ]]
-function meta:recv()
+function META:recv()
     local req, err = self.reqs:recv()
     if req then
         return request.parse(req)
@@ -80,7 +78,7 @@ end
 
     Upon error while parsing the data, returns nil and an error message.
 ]]
-function meta:recv_json()
+function META:recv_json()
     local recv, err = self:recv()
     if not recv then return nil, err end
     
@@ -98,7 +96,7 @@ end
     Raw send to the given connection ID at the given uuid, mostly 
     used internally.
 ]]
-function meta:send(uuid, conn_id, msg)
+function META:send(uuid, conn_id, msg)
     conn_id = tostring(conn_id)
     local header = format('%s %d:%s,', uuid, conn_id:len(), conn_id)
     return self.resp:send(header .. ' ' .. msg)
@@ -109,14 +107,14 @@ end
     This is easier since the req object contains all the info
     needed to do the proper reply addressing.
 ]]
-function meta:reply(req, msg)
+function META:reply(req, msg)
     return self:send(req.sender, req.conn_id, msg) 
 end
 
 --[[
     Same as reply, but tries to convert data to JSON first.
 ]]
-function meta:reply_json(req, data)
+function META:reply_json(req, data)
     return self:reply(req, json.encode(data))
 end
 
@@ -125,7 +123,7 @@ end
     any headers you've made, and encode them so that the 
     browser gets them.
 ]]
-function meta:reply_http(req, body, code, status, headers)
+function META:reply_http(req, body, code, status, headers)
     code = code or 200
     status = status or 'OK'
     headers = headers or {}
@@ -139,21 +137,21 @@ end
     will receive the message once by Mongrel2, but you don't have
     to loop which cuts down on reply volume.
 ]]
-function meta:deliver(uuid, idents, data)
+function META:deliver(uuid, idents, data)
     return self:send(uuid, concat(idents, ' '), data)
 end
 
 --[[
     Same as deliver, but converts to JSON first.
 ]]
-function meta:deliver_json(uuid, idents, data)
+function META:deliver_json(uuid, idents, data)
     return self:deliver(uuid, idents, json.encode(data))
 end
 
 --[[
     Same as deliver, but builds a HTTP response.
 ]]
-function meta:deliver_http(uuid, idents, body, code, status, headers)
+function META:deliver_http(uuid, idents, body, code, status, headers)
     code = code or 200
     status = status or 'OK'
     headers = headers or {}
@@ -163,14 +161,14 @@ end
 --[[
 -- Tells Mongrel2 to explicitly close the HTTP connection.
 --]]
-function meta:close(req)
+function META:close(req)
     return self:reply(req, "")
 end
 
 --[[
 -- Sends and explicit close to multiple idents with a single message.
 --]]
-function meta:deliver_close(uuid, idents)
+function META:deliver_close(uuid, idents)
     return self:deliver(uuid, idents, "")
 end
 
@@ -178,7 +176,7 @@ end
     Creates a new connection object.
     Internal use only, call ctx:new_context instead.
 ]]
-function new(ctx, sender_id, sub_addr, pub_addr)
+function MOD.new(ctx, sender_id, sub_addr, pub_addr)
     local good, err
 
     -- Create and connect to the PULL (request) socket.
@@ -210,6 +208,7 @@ function new(ctx, sender_id, sub_addr, pub_addr)
         resp = resp;
     }
 
-    return setmetatable(obj, meta)
+    return setmetatable(obj, META)
 end
 
+return MOD

@@ -29,7 +29,7 @@ local sqlite = require 'lsqlite3'
 
 local error, io, next, pairs, table, tostring, type = error, io, next, pairs, table, tostring, type
 
-module 'mongrel2.config'
+local MOD = {}
 
 local prep = [[
 begin transaction;
@@ -232,7 +232,7 @@ function WRITERS.setting(db, obj)
 end
 
 -- Writes a config to sqlite.
-function write(db_file, conf)
+function MOD.write(db_file, conf)
     local db = sqlite.open(db_file)
 
     -- Create a new write cache, otherwise we'd not know what to write, and stuff.
@@ -261,7 +261,7 @@ function write(db_file, conf)
 end
 
 -- Read a config from sqlite.
-function read(db_file)
+function MOD.read(db_file)
     local db = sqlite.open(db_file)
 
     local backends = {}
@@ -300,3 +300,5 @@ function read(db_file)
 
     return {servers = servers; settings = settings}
 end
+
+return MOD

@@ -23,9 +23,9 @@
 local error = error
 local find, sub = string.find, string.sub
 
-module 'mongrel2.util'
+local MOD = {}
 
-function split(str, delim, count, no_patterns)
+function MOD.split(str, delim, count, no_patterns)
     if delim == '' then error('invalid delimiter', 2) end
     count = count or 0
 
@@ -48,3 +48,5 @@ function split(str, delim, count, no_patterns)
 
     return results
 end
+
+return MOD

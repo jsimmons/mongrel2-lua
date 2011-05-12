@@ -291,7 +291,12 @@ function read(db_file)
         table.insert(servers, server)
     end
 
+    local settings = {}
+    for _, setting in pairs(db_select(db, 'setting')) do
+        table.insert(settings, {key=setting.key, value=setting.value})
+    end
+
     db:close()
 
-    return servers
+    return {servers = servers, settings = settings}
 end

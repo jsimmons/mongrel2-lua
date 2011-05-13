@@ -74,7 +74,10 @@ CREATE TABLE proxy (id INTEGER PRIMARY KEY,
     port INTEGER);
 
 CREATE TABLE directory (id INTEGER PRIMARY KEY,
-    base TEXT, index_file TEXT, default_ctype TEXT);
+    base TEXT,
+    index_file TEXT,
+    default_ctype TEXT,
+    cache_ttl INTEGER DEFAULT 0);
 
 CREATE TABLE route (id INTEGER PRIMARY KEY,
     path TEXT,
@@ -206,9 +209,9 @@ end
 
 local WRITERS = {
     proxy = create_simple_writer('proxy', 'addr', 'port');
-    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype');
+    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype', 'cache_ttl');
     handler = create_simple_writer('handler', 'send_spec', 'send_ident', 'recv_spec', 'recv_ident', 'raw_payload', 'protocol');
-    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_File', 'default_host', 'name', 'bind_addr', 'port');
+    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_file', 'default_host', 'name', 'bind_addr', 'port');
 }
 
 function WRITERS.route(db, obj, state)

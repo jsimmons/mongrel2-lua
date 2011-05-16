@@ -212,9 +212,9 @@ end
 
 local WRITERS = {
     proxy = create_simple_writer('proxy', 'addr', 'port');
-    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype');
+    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype', 'cache_ttl');
     handler = create_simple_writer('handler', 'send_spec', 'send_ident', 'recv_spec', 'recv_ident', 'raw_payload', 'protocol');
-    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_File', 'default_host', 'name', 'bind_addr', 'port');
+    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_file', 'default_host', 'name', 'bind_addr', 'port');
 }
 
 function WRITERS.route(db, obj, state)

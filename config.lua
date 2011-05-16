@@ -304,5 +304,5 @@ function read(db_file)
 
     db:close()
 
-    return servers
+    return return {servers = servers; settings = settings}
 end

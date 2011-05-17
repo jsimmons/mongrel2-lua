@@ -1,12 +1,12 @@
 package = "mongrel2-lua"
 version = "scm-0"
 source = {
-   url = "git://github.com/jsimmons/mongrel2-lua.git",
+   url = "git://github.com/mtowers/mongrel2-lua.git",
 }
 description = {
    summary = "A mongrel2 backend handler for Lua.",
    license = "MIT/X11",
-   homepage = "http://github.com/jsimmons/mongrel2-lua"
+   homepage = "http://github.com/mtowers/mongrel2-lua"
 }
 dependencies = {
    "lua >= 5.1",

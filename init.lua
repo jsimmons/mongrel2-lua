@@ -28,19 +28,18 @@ local util = require 'mongrel2.util'
 local pcall, setmetatable = pcall, setmetatable
 
 module 'mongrel2'
+local MOD, META = {}, {}
+META.__index = META
 
-local meta = {}
-meta.__index = meta
-
-function meta:new_connection(sender_id, sub_addr, pub_addr)
+function META:new_connection(sender_id, sub_addr, pub_addr)
     return connection.new(self.ctx, sender_id, sub_addr, pub_addr)
 end
 
-function meta:term()
+function META:term()
     return self.ctx:term()
 end
 
-function new(io_threads)
+function MOD.new(io_threads)
     io_threads = io_threads or 1
 
     local ctx, err = zmq.init(io_threads)
@@ -51,6 +50,7 @@ function new(io_threads)
         ctx = ctx;
     }
 
-    return setmetatable(obj, meta)
+    return setmetatable(obj, META)
 end
 
+return MOD

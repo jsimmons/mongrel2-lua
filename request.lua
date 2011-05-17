@@ -30,22 +30,20 @@ local pcall, setmetatable, tonumber, unpack = pcall, setmetatable, tonumber, unp
 local string = string
 string.split = util.split
 
-module 'mongrel2.request'
-
-local meta = {}
-meta.__index = meta
+local MOD, META = {}, {}
+META.__index = META
 
 --[[
     Returns true if the request object is a disconnect event.
 ]]
-function meta:is_disconnect()
+function META:is_disconnect()
     return self.headers['METHOD'] == 'JSON' and self.data.type == 'disconnect'
 end
 
 --[[
 -- Checks if the request was for a connection close.
 --]]
-function meta:should_close()
+function META:should_close()
     if self.headers['connection'] == 'close' then
         return true
     elseif self.headers['VERSION'] == 'HTTP/1.0' then
@@ -69,7 +67,7 @@ local function new(sender, conn_id, path, headers, body)
         obj.data = json.decode(body)
     end
 
-    return setmetatable(obj, meta)
+    return setmetatable(obj, META)
 end
 
 --[[
@@ -90,13 +88,13 @@ end
 --[[
     Parses a request and returns a new request object describing it.
 ]]
-function parse(msg)
+function MOD.parse(msg)
         local sender, conn_id, path, rest = unpack(msg:split(' ', 4))
         
         local headers, rest = parse_netstring(rest)
         if not headers then return nil, rest end
 
-        body = parse_netstring(rest)
+        local body = parse_netstring(rest)
 
         -- Have to pcall because json.decode errors on invalid json data.
         local success, headers = pcall(json.decode, headers)
@@ -105,3 +103,4 @@ function parse(msg)
         return new(sender, conn_id, path, headers, body)
 end
 
+return MOD

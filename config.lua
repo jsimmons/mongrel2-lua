@@ -127,25 +127,27 @@ local function sql_tostring(obj)
         end
 end
 
-local function db_insert(db, name, data)
+-- Inserts a row into table_name with the field[value] data.
+local function db_insert(db, table_name, data)
     local values = {}
-    local keys = {}
+    local fields = {}
     local i = 1
     for k, v in pairs(data) do
         if k and v then
-            keys[i] = k
+            fields[i] = k
             values[i] = sql_tostring(v)
             i = i + 1
         end
     end
 
-    -- Nothing to write.
+    -- If no field-value pairs were found in the given data table, we don't
+    -- want to try to write anything.
     if i == 1 then
         return 0
     end
 
     local fmt = 'INSERT INTO %s(%s) VALUES(%s)'
-    local query = fmt:format(name, table.concat(keys, ','), table.concat(values, ','))
+    local query = fmt:format(table_name, table.concat(fields, ','), table.concat(values, ','))
 
     local result = db:exec(query)
 
@@ -156,7 +158,8 @@ local function db_insert(db, name, data)
     return db:last_insert_rowid()
 end
 
-local function db_select(db, name, predicate)
+-- Selects rows from table_name that optionally match given field-value predicates.
+local function db_select(db, table_name, predicate)
     local query
 
     if predicate then
@@ -166,9 +169,9 @@ local function db_select(db, name, predicate)
             table.insert(conditions, condition)
         end
 
-        query = ('SELECT * FROM %s WHERE %s'):format(name, table.concat(conditions, ' AND '))
+        query = ('SELECT * FROM %s WHERE %s'):format(table_name, table.concat(conditions, ' AND '))
     else
-        query = ('SELECT * FROM %s'):format(name)
+        query = ('SELECT * FROM %s'):format(table_name)
     end
 
     local results = {}
@@ -188,6 +191,7 @@ local function db_select(db, name, predicate)
     return results
 end
 
+-- Takes a table name, then a list of table fields and creates a tailored write function
 local function create_simple_writer(name, ...)
     local args = {...}
     return function(db, obj, state)
@@ -204,6 +208,9 @@ local function create_simple_writer(name, ...)
     end
 end
 
+-- Writers are simple functions that take a database object, the object to write, and a
+-- state table that is used to make sure we only write each individual item once.
+-- They then return their row-id to the caller for use in subsequent queries.
 local WRITERS = {
     proxy = create_simple_writer('proxy', 'addr', 'port');
     dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype');
@@ -266,6 +273,7 @@ function MOD.read(db_file)
 
     local backends = {}
 
+    -- Reads everything from a given table into the backends table indexed by the table name.
     local function read_all(t)
         if not backends[t] then backends[t] = {} end
         for _, thing in pairs(db_select(db, t)) do
@@ -274,10 +282,13 @@ function MOD.read(db_file)
         end
     end
 
+    -- Since these don't have any hierarchy, we can just load them all up in a single go.
     read_all('handler');
     read_all('proxy');
     read_all('dir');
 
+    -- The server, host and route tables have an ad-hoc hierarchy so we need to walk this
+    -- With a bit more finesse than the previous tables.
     local servers = {}
     for _, server in pairs(db_select(db, 'server')) do
         server.hosts = {}
@@ -291,6 +302,7 @@ function MOD.read(db_file)
         table.insert(servers, server)
     end
 
+    -- Settings is a plain key-value store, so we map that directly to a lua table.
     local settings = {}
     for _, setting in pairs(db_select(db, 'setting')) do
         settings[setting.key] = setting.value

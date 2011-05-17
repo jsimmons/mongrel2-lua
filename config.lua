@@ -50,19 +50,19 @@ CREATE TABLE server (id INTEGER PRIMARY KEY,
     error_log TEXT,
     chroot TEXT DEFAULT '/var/www',
     pid_file TEXT,
-    default_host INTEGER,
+    default_host TEXT,
     name TEXT DEFAULT "",
     bind_addr TEXT DEFAULT "0.0.0.0",
     port INTEGER);
 
-CREATE TABLE host (id INTEGER PRIMARY KEY, 
+CREATE TABLE host (id INTEGER PRIMARY KEY,
     server_id INTEGER,
     maintenance BOOLEAN DEFAULT 0,
     name TEXT,
     matching TEXT);
 
 CREATE TABLE handler (id INTEGER PRIMARY KEY,
-    send_spec TEXT, 
+    send_spec TEXT,
     send_ident TEXT,
     recv_spec TEXT,
     recv_ident TEXT,
@@ -74,7 +74,10 @@ CREATE TABLE proxy (id INTEGER PRIMARY KEY,
     port INTEGER);
 
 CREATE TABLE directory (id INTEGER PRIMARY KEY,
-    base TEXT, index_file TEXT, default_ctype TEXT);
+    base TEXT,
+    index_file TEXT,
+    default_ctype TEXT,
+    cache_ttl INTEGER DEFAULT 0);
 
 CREATE TABLE route (id INTEGER PRIMARY KEY,
     path TEXT,
@@ -83,9 +86,11 @@ CREATE TABLE route (id INTEGER PRIMARY KEY,
     target_id INTEGER,
     target_type TEXT);
 
+
 CREATE TABLE setting (id INTEGER PRIMARY KEY, key TEXT, value TEXT);
 
-CREATE TABLE statistic (id SERIAL, 
+
+CREATE TABLE statistic (id SERIAL,
     other_type TEXT,
     other_id INTEGER,
     name text,
@@ -98,6 +103,7 @@ CREATE TABLE statistic (id SERIAL,
     sd REAL,
     primary key (other_type, other_id, name));
 
+
 CREATE TABLE mimetype (id INTEGER PRIMARY KEY, mimetype TEXT, extension TEXT);
 
 CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY,
@@ -107,7 +113,7 @@ CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY,
     happened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     how TEXT,
     why TEXT);
-    
+
 commit;
 ]]
 
@@ -213,7 +219,7 @@ end
 -- They then return their row-id to the caller for use in subsequent queries.
 local WRITERS = {
     proxy = create_simple_writer('proxy', 'addr', 'port');
-    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype');
+    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype', 'cache_ttl');
     handler = create_simple_writer('handler', 'send_spec', 'send_ident', 'recv_spec', 'recv_ident', 'raw_payload', 'protocol');
     server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_file', 'default_host', 'name', 'bind_addr', 'port');
 }

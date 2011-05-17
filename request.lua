@@ -94,7 +94,7 @@ function MOD.parse(msg)
         local headers, rest = parse_netstring(rest)
         if not headers then return nil, rest end
 
-        body = parse_netstring(rest)
+        local body = parse_netstring(rest)
 
         -- Have to pcall because json.decode errors on invalid json data.
         local success, headers = pcall(json.decode, headers)

@@ -53,4 +53,4 @@ function MOD.new(io_threads)
     return setmetatable(obj, META)
 end
 
-return mod
+return MOD

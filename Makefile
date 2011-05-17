@@ -22,7 +22,7 @@ INSTALL_PATH=/usr/local/share/lua/5.1
 
 install:
 	mkdir -p $(INSTALL_PATH)/mongrel2
-	install -m 644 -t $(INSTALL_PATH)/mongrel2 connection.lua init.lua request.lua util.lua config.lua
+	install -m 644 -t $(INSTALL_PATH)/mongrel2 connection.lua init.lua request.lua util.lua config.lua tnetstring.lua
 
 uninstall: 
 	rm -rf $(INSTALL_PATH)/mongrel2

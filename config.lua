@@ -29,7 +29,7 @@ local sqlite = require 'lsqlite3'
 
 local error, io, next, pairs, table, tostring, type = error, io, next, pairs, table, tostring, type
 
-module 'mongrel2.config'
+local MOD = {}
 
 local prep = [[
 begin transaction;
@@ -50,19 +50,19 @@ CREATE TABLE server (id INTEGER PRIMARY KEY,
     error_log TEXT,
     chroot TEXT DEFAULT '/var/www',
     pid_file TEXT,
-    default_host INTEGER,
+    default_host TEXT,
     name TEXT DEFAULT "",
     bind_addr TEXT DEFAULT "0.0.0.0",
     port INTEGER);
 
-CREATE TABLE host (id INTEGER PRIMARY KEY, 
+CREATE TABLE host (id INTEGER PRIMARY KEY,
     server_id INTEGER,
     maintenance BOOLEAN DEFAULT 0,
     name TEXT,
     matching TEXT);
 
 CREATE TABLE handler (id INTEGER PRIMARY KEY,
-    send_spec TEXT, 
+    send_spec TEXT,
     send_ident TEXT,
     recv_spec TEXT,
     recv_ident TEXT,
@@ -74,7 +74,10 @@ CREATE TABLE proxy (id INTEGER PRIMARY KEY,
     port INTEGER);
 
 CREATE TABLE directory (id INTEGER PRIMARY KEY,
-    base TEXT, index_file TEXT, default_ctype TEXT);
+    base TEXT,
+    index_file TEXT,
+    default_ctype TEXT,
+    cache_ttl INTEGER DEFAULT 0);
 
 CREATE TABLE route (id INTEGER PRIMARY KEY,
     path TEXT,
@@ -83,9 +86,11 @@ CREATE TABLE route (id INTEGER PRIMARY KEY,
     target_id INTEGER,
     target_type TEXT);
 
+
 CREATE TABLE setting (id INTEGER PRIMARY KEY, key TEXT, value TEXT);
 
-CREATE TABLE statistic (id SERIAL, 
+
+CREATE TABLE statistic (id SERIAL,
     other_type TEXT,
     other_id INTEGER,
     name text,
@@ -98,6 +103,7 @@ CREATE TABLE statistic (id SERIAL,
     sd REAL,
     primary key (other_type, other_id, name));
 
+
 CREATE TABLE mimetype (id INTEGER PRIMARY KEY, mimetype TEXT, extension TEXT);
 
 CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY,
@@ -107,7 +113,7 @@ CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY,
     happened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     how TEXT,
     why TEXT);
-    
+
 commit;
 ]]
 
@@ -127,25 +133,27 @@ local function sql_tostring(obj)
         end
 end
 
-local function db_insert(db, name, data)
+-- Inserts a row into table_name with the field[value] data.
+local function db_insert(db, table_name, data)
     local values = {}
-    local keys = {}
+    local fields = {}
     local i = 1
     for k, v in pairs(data) do
         if k and v then
-            keys[i] = k
+            fields[i] = k
             values[i] = sql_tostring(v)
             i = i + 1
         end
     end
 
-    -- Nothing to write.
+    -- If no field-value pairs were found in the given data table, we don't
+    -- want to try to write anything.
     if i == 1 then
         return 0
     end
 
     local fmt = 'INSERT INTO %s(%s) VALUES(%s)'
-    local query = fmt:format(name, table.concat(keys, ','), table.concat(values, ','))
+    local query = fmt:format(table_name, table.concat(fields, ','), table.concat(values, ','))
 
     local result = db:exec(query)
 
@@ -156,7 +164,8 @@ local function db_insert(db, name, data)
     return db:last_insert_rowid()
 end
 
-local function db_select(db, name, predicate)
+-- Selects rows from table_name that optionally match given field-value predicates.
+local function db_select(db, table_name, predicate)
     local query
 
     if predicate then
@@ -166,9 +175,9 @@ local function db_select(db, name, predicate)
             table.insert(conditions, condition)
         end
 
-        query = ('SELECT * FROM %s WHERE %s'):format(name, table.concat(conditions, ' AND '))
+        query = ('SELECT * FROM %s WHERE %s'):format(table_name, table.concat(conditions, ' AND '))
     else
-        query = ('SELECT * FROM %s'):format(name)
+        query = ('SELECT * FROM %s'):format(table_name)
     end
 
     local results = {}
@@ -188,6 +197,7 @@ local function db_select(db, name, predicate)
     return results
 end
 
+-- Takes a table name, then a list of table fields and creates a tailored write function
 local function create_simple_writer(name, ...)
     local args = {...}
     return function(db, obj, state)
@@ -204,11 +214,14 @@ local function create_simple_writer(name, ...)
     end
 end
 
+-- Writers are simple functions that take a database object, the object to write, and a
+-- state table that is used to make sure we only write each individual item once.
+-- They then return their row-id to the caller for use in subsequent queries.
 local WRITERS = {
     proxy = create_simple_writer('proxy', 'addr', 'port');
-    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype');
+    dir = create_simple_writer('directory', 'base', 'index_file', 'default_ctype', 'cache_ttl');
     handler = create_simple_writer('handler', 'send_spec', 'send_ident', 'recv_spec', 'recv_ident', 'raw_payload', 'protocol');
-    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_File', 'default_host', 'name', 'bind_addr', 'port');
+    server = create_simple_writer('server', 'uuid', 'access_log', 'error_log', 'chroot', 'pid_file', 'default_host', 'name', 'bind_addr', 'port');
 }
 
 function WRITERS.route(db, obj, state)
@@ -232,7 +245,7 @@ function WRITERS.setting(db, obj)
 end
 
 -- Writes a config to sqlite.
-function write(db_file, conf)
+function MOD.write(db_file, conf)
     local db = sqlite.open(db_file)
 
     -- Create a new write cache, otherwise we'd not know what to write, and stuff.
@@ -261,11 +274,12 @@ function write(db_file, conf)
 end
 
 -- Read a config from sqlite.
-function read(db_file)
+function MOD.read(db_file)
     local db = sqlite.open(db_file)
 
     local backends = {}
 
+    -- Reads everything from a given table into the backends table indexed by the table name.
     local function read_all(t)
         if not backends[t] then backends[t] = {} end
         for _, thing in pairs(db_select(db, t)) do
@@ -274,10 +288,13 @@ function read(db_file)
         end
     end
 
+    -- Since these don't have any hierarchy, we can just load them all up in a single go.
     read_all('handler');
     read_all('proxy');
     read_all('dir');
 
+    -- The server, host and route tables have an ad-hoc hierarchy so we need to walk this
+    -- With a bit more finesse than the previous tables.
     local servers = {}
     for _, server in pairs(db_select(db, 'server')) do
         server.hosts = {}
@@ -291,7 +308,15 @@ function read(db_file)
         table.insert(servers, server)
     end
 
+    -- Settings is a plain key-value store, so we map that directly to a lua table.
+    local settings = {}
+    for _, setting in pairs(db_select(db, 'setting')) do
+        settings[setting.key] = setting.value
+    end
+
     db:close()
 
     return servers
 end
+
+return MOD

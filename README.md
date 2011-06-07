@@ -12,6 +12,7 @@ Dependencies
 * [ZeroMQ](http://www.zeromq.org/) requires at least 2.1.4 (not 2.1.6!)
 * [ZeroMQ-lua](http://github.com/iamaleksey/lua-zmq)
 * [LuaJSON](http://github.com/harningt/luajson)
+* [tnetstrings.lua](https://github.com/jsimmons/tnetstrings.lua)
 
 Installation
 ------------

@@ -22,7 +22,10 @@
 
 
 local json = require 'json'
-local util = require 'mongrel2.util'
+local tns = require 'tnetstrings'
+local tns_parse = tns.parse
+
+local util = require 'util'
 
 local pcall, setmetatable, tonumber, unpack = pcall, setmetatable, tonumber, unpack
 
@@ -71,34 +74,24 @@ local function new(sender, conn_id, path, headers, body)
 end
 
 --[[
-    Parses a netstring and returns the body and any left over data.
-]]
-local function parse_netstring(ns)
-    local length, rest = unpack(ns:split(':', 2, true))
-    if not length and rest then return nil, 'could not split netsplit length and data' end
-
-    length = tonumber(length)
-    if not length then return nil, 'invalid netstring length' end
-
-    if rest:sub(length + 1, length + 1) ~= ',' then return nil, 'netstring did not end in ","' end
-
-    return rest:sub(1, length), rest:sub(length + 2)
-end
-
---[[
     Parses a request and returns a new request object describing it.
 ]]
 function MOD.parse(msg)
         local sender, conn_id, path, rest = unpack(msg:split(' ', 4))
         
-        local headers, rest = parse_netstring(rest)
-        if not headers then return nil, rest end
+        local headers, rest_idx = tns_parse(rest)
+        if headers == nil then return nil, rest_idx end
 
-        local body = parse_netstring(rest)
+        local header_type = type(headers)
 
-        -- Have to pcall because json.decode errors on invalid json data.
-        local success, headers = pcall(json.decode, headers)
-        if not success then return nil, headers end
+        if header_type == 'string' then
+            local success, headers = pcall(json.decode, headers)
+            if not success then return nil, headers end
+        elseif header_type ~= 'table' then -- We have to be a string or a table here.
+            return nil, 'got invalid headers type'
+        end
+
+        local body, rest_idx = tns_parse(rest, rest_idx)
 
         return new(sender, conn_id, path, headers, body)
 end

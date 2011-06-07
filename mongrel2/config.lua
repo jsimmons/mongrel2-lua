@@ -314,7 +314,10 @@ local function read(db_file)
 
     db:close()
 
-    return servers
+    return {
+        servers = servers;
+        settings = settings;
+    }
 end
 
 return {

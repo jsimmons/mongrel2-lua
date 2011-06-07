@@ -27,11 +27,7 @@ One may be more interested in using one of the web frameworks that are listed [h
 as this library is a low level interface.
 
 Otherwise I won't try to describe how mongrel2 or the handlers work, for that there's [the manual](http://mongrel2.org/doc/tip/docs/manual/book.wiki), however this should describe the basic api.
-Generated API documentation is on the TODO list.
 
 If in doubt, it's probably exactly the same as the python API.
 
 There is a very basic demo in examples/test.lua and the code itself should be easy enough to follow.
-
-Watch this space for links to proper documentation. I am working on it!
-

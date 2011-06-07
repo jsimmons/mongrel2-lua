@@ -20,33 +20,38 @@
 # THE SOFTWARE.
 ]]
 
-local error = error
-local find, sub = string.find, string.sub
+local zmq = require 'zmq'
 
-local MOD = {}
+local connection = require 'mongrel2.connection'
+local util = require 'mongrel2.util'
 
-function MOD.split(str, delim, count, no_patterns)
-    if delim == '' then error('invalid delimiter', 2) end
-    count = count or 0
+local setmetatable = setmetatable
 
-    local next_delim = 1
-    local i = 1
-    local results = {}
+local Context = {}
+Context.__index = Context
 
-    repeat
-        local start, finish = find(str, delim, next_delim, no_patterns)
-        if start and finish then
-            results[i] = sub(str, next_delim, start - 1)
-            next_delim = finish + 1
-        else
-            break
-        end
-        i = i + 1
-    until i == count
-
-    results[i] = sub(str, next_delim)
-
-    return results
+function Context:new_connection(sender_id, sub_addr, pub_addr)
+    return connection.new(self.ctx, sender_id, sub_addr, pub_addr)
 end
 
-return MOD
+function Context:term()
+    return self.ctx:term()
+end
+
+local function new(io_threads)
+    io_threads = io_threads or 1
+
+    local ctx, err = zmq.init(io_threads)
+
+    if not ctx then return nil, err end
+
+    local obj = {
+        ctx = ctx;
+    }
+
+    return setmetatable(obj, Context)
+end
+
+return {
+    new = new;
+}

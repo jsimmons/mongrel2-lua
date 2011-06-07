@@ -25,7 +25,7 @@ local json = require 'json'
 local tns = require 'tnetstrings'
 local tns_parse = tns.parse
 
-local util = require 'util'
+local util = require 'mongrel2.util'
 
 local pcall, setmetatable, tonumber, unpack = pcall, setmetatable, tonumber, unpack
 
@@ -33,20 +33,16 @@ local pcall, setmetatable, tonumber, unpack = pcall, setmetatable, tonumber, unp
 local string = string
 string.split = util.split
 
-local MOD, META = {}, {}
-META.__index = META
+local Request = {}
+Request.__index = Request
 
---[[
-    Returns true if the request object is a disconnect event.
-]]
-function META:is_disconnect()
+-- Returns true if the request object is a disconnect event.
+function Request:is_disconnect()
     return self.headers['METHOD'] == 'JSON' and self.data.type == 'disconnect'
 end
 
---[[
 -- Checks if the request was for a connection close.
---]]
-function META:should_close()
+function Request:should_close()
     if self.headers['connection'] == 'close' then
         return true
     elseif self.headers['VERSION'] == 'HTTP/1.0' then
@@ -70,13 +66,11 @@ local function new(sender, conn_id, path, headers, body)
         obj.data = json.decode(body)
     end
 
-    return setmetatable(obj, META)
+    return setmetatable(obj, Request)
 end
 
---[[
-    Parses a request and returns a new request object describing it.
-]]
-function MOD.parse(msg)
+-- Parses a request and returns a new request object describing it.
+local function parse(msg)
         local sender, conn_id, path, rest = unpack(msg:split(' ', 4))
         
         local headers, rest_idx = tns_parse(rest)
@@ -96,4 +90,6 @@ function MOD.parse(msg)
         return new(sender, conn_id, path, headers, body)
 end
 
-return MOD
+return {
+    parse = parse;
+}

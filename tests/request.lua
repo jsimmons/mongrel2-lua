@@ -1,3 +1,4 @@
+package.path = package.path .. ';../?/init.lua;../?.lua'
 local request = require 'mongrel2.request'
 
 local payloads = {}
@@ -7,7 +8,6 @@ for line in io.lines('request_payloads.txt') do
 end
 
 context('m2-lua', function()
-    
     context('request', function()
         context('parser sanity', function()
             for _, msg in pairs(payloads) do
@@ -18,7 +18,5 @@ context('m2-lua', function()
                  end)
             end
         end)
-
     end)
-
 end)

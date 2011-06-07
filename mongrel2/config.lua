@@ -29,8 +29,6 @@ local sqlite = require 'lsqlite3'
 
 local error, io, next, pairs, table, tostring, type = error, io, next, pairs, table, tostring, type
 
-local MOD = {}
-
 local prep = [[
 begin transaction;
 
@@ -245,7 +243,7 @@ function WRITERS.setting(db, obj)
 end
 
 -- Writes a config to sqlite.
-function MOD.write(db_file, conf)
+function write(db_file, conf)
     local db = sqlite.open(db_file)
 
     -- Create a new write cache, otherwise we'd not know what to write, and stuff.
@@ -274,7 +272,7 @@ function MOD.write(db_file, conf)
 end
 
 -- Read a config from sqlite.
-function MOD.read(db_file)
+local function read(db_file)
     local db = sqlite.open(db_file)
 
     local backends = {}
@@ -319,4 +317,7 @@ function MOD.read(db_file)
     return servers
 end
 
-return MOD
+return {
+    write = write;
+    read = read;
+}

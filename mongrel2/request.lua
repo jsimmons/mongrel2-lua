@@ -71,21 +71,30 @@ end
 
 -- Parses a request and returns a new request object describing it.
 local function parse(msg)
-        local sender, conn_id, path, rest = unpack(msg:split(' ', 4))
-        
-        local headers, rest_idx = tns_parse(rest)
-        if headers == nil then return nil, rest_idx end
+        local sender, conn_id, path, request = unpack(msg:split(' ', 4))
 
-        local header_type = type(headers)
-
-        if header_type == 'string' then
-            local success, headers = pcall(json.decode, headers)
-            if not success then return nil, headers end
-        elseif header_type ~= 'table' then -- We have to be a string or a table here.
-            return nil, 'got invalid headers type'
+        local headers, body_idx = tns_parse(request)
+ 
+        -- Total parsing failure.
+        if headers == nil then
+            return nil, body_idx
         end
 
-        local body, rest_idx = tns_parse(rest, rest_idx)
+        local t = type(headers)
+        if t == 'string' then -- legacy mode, json payload.
+            local succ
+            succ, headers = pcall(json.decode, headers)
+            if not succ then -- failed to parse json payload.
+                return nil, headers
+            end
+        elseif t ~= 'table' then -- tnetstrings, but wrong type.
+            return nil, 'invalid header parse type, expected table'
+        end
+
+        local body, err = tns_parse(request, ',', body_idx)
+        if body == nil then
+            return nil, err
+        end
 
         return new(sender, conn_id, path, headers, body)
 end

@@ -26,12 +26,9 @@ local tns = require 'tnetstrings'
 local tns_parse = tns.parse
 
 local util = require 'mongrel2.util'
+local split = util.split
 
 local pcall, setmetatable, tonumber, unpack = pcall, setmetatable, tonumber, unpack
-
--- Use our own split mechanism, but put it into string so we can call it on strings directly.
-local string = string
-string.split = util.split
 
 local Request = {}
 Request.__index = Request
@@ -71,7 +68,7 @@ end
 
 -- Parses a request and returns a new request object describing it.
 local function parse(msg)
-        local sender, conn_id, path, request = unpack(msg:split(' ', 4))
+        local sender, conn_id, path, request = unpack(split(msg,' ', 4))
 
         local headers, body_idx = tns_parse(request)
  

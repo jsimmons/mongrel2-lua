@@ -71,7 +71,7 @@ local function parse(msg)
         local sender, conn_id, path, request = unpack(split(msg,' ', 4))
 
         local headers, body_idx = tns_parse(request)
- 
+
         -- Total parsing failure.
         if headers == nil then
             return nil, body_idx

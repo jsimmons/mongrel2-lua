@@ -27,7 +27,7 @@ local request = require 'mongrel2.request'
 local util = require 'mongrel2.util'
 
 local pairs, pcall, setmetatable, tostring = pairs, pcall, setmetatable, tostring
-local insert, concat, format, length = table.insert, table.concat, string.format, string.len 
+local insert, concat, format, length = table.insert, table.concat, string.format, string.len
 
 local Connection = {}
 Connection.__index = Connection
@@ -46,12 +46,12 @@ local HTTP_FORMAT = 'HTTP/1.1 %s %s\r\n%s\r\n\r\n%s'
 
 local function http_response(body, code, status, headers)
     headers['content-length'] = length(body)
-    
+
     local raw = {}
     for k, v in pairs(headers) do
         insert(raw, format('%s: %s', k, v))
     end
-    
+
     return format(HTTP_FORMAT, code, status, concat(raw, '\r\n'), body)
 end
 
@@ -69,7 +69,7 @@ function Connection:recv()
 end
 
 --[[
-    Same as regular recv, but assumes the body is JSON and 
+    Same as regular recv, but assumes the body is JSON and
     creates a new attribute named req.data with the decoded
     payload.
 
@@ -81,7 +81,7 @@ end
 function Connection:recv_json()
     local recv, err = self:recv()
     if not recv then return nil, err end
-    
+
     if not recv.data then
         local success, data = pcall(json.decode, recv.body)
         if not success then return nil, data end
@@ -93,7 +93,7 @@ function Connection:recv_json()
 end
 
 --[[
-    Raw send to the given connection ID at the given uuid, mostly 
+    Raw send to the given connection ID at the given uuid, mostly
     used internally.
 ]]
 function Connection:send(uuid, conn_id, msg)
@@ -108,7 +108,7 @@ end
     needed to do the proper reply addressing.
 ]]
 function Connection:reply(req, msg)
-    return self:send(req.sender, req.conn_id, msg) 
+    return self:send(req.sender, req.conn_id, msg)
 end
 
 --[[
@@ -120,7 +120,7 @@ end
 
 --[[
     Basic HTTP response mechanism which will take your body,
-    any headers you've made, and encode them so that the 
+    any headers you've made, and encode them so that the
     browser gets them.
 ]]
 function Connection:reply_http(req, body, code, status, headers)
